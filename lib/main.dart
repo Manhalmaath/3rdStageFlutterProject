@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:todo/database_helper.dart';
 
 import 'task.dart';
@@ -10,7 +8,7 @@ void main() => runApp(MyApp());
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       title: 'ToDo App',
       home: MyHomePage(),
     );
@@ -19,6 +17,7 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
+
   @override
   MyHomePageState createState() => MyHomePageState();
 }
@@ -27,32 +26,32 @@ class MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   final TextEditingController _textEditingController = TextEditingController();
   final TextEditingController _descriptionEditingController =
       TextEditingController();
-  List<Task> _tasks = [];
   late DatabaseHelper dbConnection;
+
   @override
   void initState() {
     super.initState();
     dbConnection = DatabaseHelper();
   }
 
-  Future<List<Task>> loadData() {
-    dbConnection.allNotes().then((value) {
-      setState(() {
-        _tasks = value;
-      });
-    });
-    debugPrint('loadData');
-    return Future.value(_tasks);
-  }
+  // Future<List<Task>> loadData() {
+  //   dbConnection.allNotes().then((value) {
+  //     setState(() {
+  //       _tasks = value;
+  //     });
+  //   });
+  //   debugPrint('loadData');
+  //   return Future.value(_tasks);
+  // }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('ToDo App'),
+        title: const Text('ToDo App'),
       ),
       body: FutureBuilder(
-        future: loadData(),
+        future: dbConnection.allNotes(),
         builder: (context, AsyncSnapshot<List> snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -62,7 +61,10 @@ class MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
             return ListView.builder(
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
-                Task task = snapshot.data![index];
+                // Model task = snapshot.data![index];
+
+                Task task = Task.fromMap(snapshot.data![index]);
+
                 debugPrint('task ${task.title}');
                 return Card(
                   margin: const EdgeInsets.all(8.0),
@@ -70,11 +72,12 @@ class MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                     borderRadius: BorderRadius.circular(25.0),
                   ),
                   child: ListTile(
-                    onTap: (() => task.showCard(context)),
+                    onTap: (() =>
+                        {task.showCard(context, task.title, task.description)}),
                     title: Text(
                       task.title,
                       style: TextStyle(
-                          decoration: task.isDone
+                          decoration: task.isDone == 'true'
                               ? TextDecoration.lineThrough
                               : TextDecoration.none),
                     ),
@@ -86,8 +89,8 @@ class MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                           icon: const Icon(Icons.delete),
                           onPressed: () {
                             setState(() {
-                              dbConnection.delete(1);
-                              loadData();
+                              dbConnection.delete(task.id!.toInt());
+                              // loadData();
                             });
                           },
                         ),
@@ -95,9 +98,9 @@ class MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                           icon: const Icon(Icons.check_rounded),
                           onPressed: () {
                             setState(() {
-                              task.isDone = !task.isDone;
+                              task.isDone = 'true';
                               dbConnection.edit(task);
-                              loadData();
+                              // loadData();
                             });
                           },
                         ),
@@ -136,17 +139,16 @@ class MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                 ),
                 actions: <Widget>[
                   TextButton(
-                    onPressed: () {
+                    onPressed: () async {
+                      await dbConnection.create(Task(
+                          title: _textEditingController.text,
+                          description: _descriptionEditingController.text,
+                          isDone: 'false'));
                       if (_textEditingController.text.isNotEmpty) {
-                        setState(() {
-                          dbConnection.create(Task(
-                              title: _textEditingController.text,
-                              description: _descriptionEditingController.text,
-                              isDone: false));
-                        });
+                        setState(() {});
                         debugPrint('task created');
                         Navigator.of(context).pop();
-                        loadData();
+                        // loadData();
                         _textEditingController.clear();
                         _descriptionEditingController.clear();
                       }

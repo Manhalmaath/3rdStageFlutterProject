@@ -1,30 +1,47 @@
 import 'package:flutter/material.dart';
 
 class Task {
-  int? id;
-  final String title;
-  bool isDone;
-  final String description;
+  late int? id;
+  late String title;
+  late String description;
+  late String? isDone;
 
-  Task({this.id,required this.title, this.isDone = false, this.description = ''});
+  Task(
+      {this.id,
+      required this.title,
+      required this.description,
+      required this.isDone});
 
+  Task.fromMap(Map data) {
+    id = data['ID'];
+    title = data['title'];
+    description = data['description'];
+    isDone = data['isDone'];
+  }
 
+  // Convert a Dog into a Map. The keys must correspond to the names of the
+  // columns in the database.
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      'ID': id,
       'title': title,
       'description': description,
-      'is_done': isDone ? 1 : 0,
+      'isDone': isDone
     };
   }
 
-  Task.fromMap(Map<String, dynamic> map)
-      : id = map['id'],
-        title = map['title'],
-        description = map['description'],
-        isDone = map['is_done'] == 1;
+  // Implement toString to make it easier to see information about
+  // each dog when using the print statement.
+  @override
+  String toString() {
+    return 'toDO{id: $id, title: $title,description:$description,isDone:$isDone}';
+  }
 
-    void showCard(BuildContext context) {
+  get ID => id;
+
+  get descriptionOfTheNote => description;
+
+  void showCard(BuildContext context, noteTitle, noteDescription) {
     showDialog(
       context: context,
       builder: (context) {
@@ -33,10 +50,11 @@ class Task {
             borderRadius: BorderRadius.circular(25.0),
           ),
           title: Text(
-            title,
+            noteTitle,
           ),
-          content: Text(
-              description.isNotEmpty ? description : "There is no desciption"),
+          content: Text(noteDescription.isNotEmpty
+              ? noteDescription
+              : "There is no desciption"),
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -51,5 +69,4 @@ class Task {
       },
     );
   }
-
 }
