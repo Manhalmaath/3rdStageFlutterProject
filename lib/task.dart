@@ -1,13 +1,30 @@
 import 'package:flutter/material.dart';
 
 class Task {
+  int? id;
   final String title;
   bool isDone;
   final String description;
 
-  Task({required this.title, this.isDone = false, this.description = ''});
+  Task({this.id,required this.title, this.isDone = false, this.description = ''});
 
-  void showCard(BuildContext context) {
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'is_done': isDone ? 1 : 0,
+    };
+  }
+
+  Task.fromMap(Map<String, dynamic> map)
+      : id = map['id'],
+        title = map['title'],
+        description = map['description'],
+        isDone = map['is_done'] == 1;
+
+    void showCard(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) {
@@ -35,11 +52,4 @@ class Task {
     );
   }
 
-  static Task fromJson(Map<String, dynamic> json) {
-    return Task(
-      title: json['title'],
-      isDone: json['isDone'],
-      description: json['description'],
-    );
-  }
 }

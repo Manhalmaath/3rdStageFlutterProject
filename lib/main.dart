@@ -1,8 +1,10 @@
 import 'dart:convert';
 
+import 'package:todo/database_helper.dart';
+
 import 'task.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
@@ -22,58 +24,25 @@ class MyHomePage extends StatefulWidget {
 }
 
 class MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
-  List<Task> _tasks = [];
   final TextEditingController _textEditingController = TextEditingController();
   final TextEditingController _descriptionEditingController =
       TextEditingController();
-
-  
+  List<Task> _tasks = [];
+  late DatabaseHelper dbConnection;
+  @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _loadTasks();
+    dbConnection = DatabaseHelper();
   }
 
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _loadTasks();
-    } else if (state == AppLifecycleState.paused) {
-      _saveTasks();
-    }
-  }
-
-  void _saveTasks() async {
-    // Serialize the list of tasks to a JSON string
-    String tasksJson = json.encode(_tasks);
-
-    // Get the instance of SharedPreferences
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    // Save the tasks JSON string in the local storage
-    await prefs.setString('tasks', tasksJson);
-  }
-
-  void _loadTasks() async {
-    // Get the instance of SharedPreferences
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    // Load the tasks JSON string from the local storage
-    String? tasksJson = prefs.getString('tasks');
-
-    // Deserialize the tasks JSON string to a list of tasks
-    List<Task> tasks = (tasksJson != null) ? json.decode(tasksJson).map((i) => Task.fromJson(i)).toList() : [];
-
-    // Update the _tasks list with the loaded tasks
-    setState(() {
-      _tasks = tasks;
+  Future<List<Task>> loadData() {
+    dbConnection.allNotes().then((value) {
+      setState(() {
+        _tasks = value;
+      });
     });
+    debugPrint('loadData');
+    return Future.value(_tasks);
   }
 
   @override
@@ -82,49 +51,63 @@ class MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
       appBar: AppBar(
         title: Text('ToDo App'),
       ),
-      body: ListView.builder(
-        itemCount: _tasks.length,
-        itemBuilder: (context, index) {
-          Task task = _tasks[index];
-          return Card(
-              margin: EdgeInsets.all(8.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25.0),
-              ),
-              child: ListTile(
-                onTap: () {
-                  task.showCard(context);
-                },
-                title: Text(
-                  task.title,
-                  style: TextStyle(
-                      decoration: task.isDone
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    IconButton(
-                      color: Colors.red,
-                      icon: Icon(Icons.delete),
-                      onPressed: () {
-                        setState(() {
-                          _tasks.removeAt(index);
-                        });
-                      },
+      body: FutureBuilder(
+        future: loadData(),
+        builder: (context, AsyncSnapshot<List> snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.data!.isEmpty) {
+            return const Center(child: Text('No tasks yet'));
+          } else {
+            return ListView.builder(
+              itemCount: snapshot.data!.length,
+              itemBuilder: (context, index) {
+                Task task = snapshot.data![index];
+                debugPrint('task ${task.title}');
+                return Card(
+                  margin: const EdgeInsets.all(8.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25.0),
+                  ),
+                  child: ListTile(
+                    onTap: (() => task.showCard(context)),
+                    title: Text(
+                      task.title,
+                      style: TextStyle(
+                          decoration: task.isDone
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.check_rounded),
-                      onPressed: () {
-                        setState(() {
-                          task.isDone = !task.isDone;
-                        });
-                      },
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        IconButton(
+                          color: Colors.red,
+                          icon: const Icon(Icons.delete),
+                          onPressed: () {
+                            setState(() {
+                              dbConnection.delete(1);
+                              loadData();
+                            });
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.check_rounded),
+                          onPressed: () {
+                            setState(() {
+                              task.isDone = !task.isDone;
+                              dbConnection.edit(task);
+                              loadData();
+                            });
+                          },
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ));
+                  ),
+                );
+              },
+            );
+          }
         },
       ),
       floatingActionButton: FloatingActionButton(
@@ -156,11 +139,14 @@ class MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                     onPressed: () {
                       if (_textEditingController.text.isNotEmpty) {
                         setState(() {
-                          _tasks.add(Task(
+                          dbConnection.create(Task(
                               title: _textEditingController.text,
-                              description: _descriptionEditingController.text));
+                              description: _descriptionEditingController.text,
+                              isDone: false));
                         });
+                        debugPrint('task created');
                         Navigator.of(context).pop();
+                        loadData();
                         _textEditingController.clear();
                         _descriptionEditingController.clear();
                       }
