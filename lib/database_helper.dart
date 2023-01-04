@@ -12,28 +12,26 @@ class DatabaseHelper {
   DatabaseHelper.internal();
 
   // static late Database _db;
-  Future<Database> createDAtabase() async {
-    final _db = openDatabase(
-      // Set the path to the database. Note: Using the `join` function from the
-      // `path` package is best practice to ensure the path is correctly
-      // constructed for each platform.
-      join(await getDatabasesPath(), 'notes.Db'),
-      // When the database is first created, create a table to store dogs.
+  Future<Database> createDatabase() async {
+    final db = openDatabase(
+      join(await getDatabasesPath(), 'Tasks.Db'),
       onCreate: (db, version) {
-        // Run the CREATE TABLE statement on the database.
         return db.execute(
-          'create table ToDo(ID integer primary key autoincrement,  title TEXT,description TEXT,isDone TEXT)',
+          '''create table ToDo(ID integer primary key autoincrement,
+            title TEXT,
+            description TEXT,
+            isDone TEXT)''',
         );
       },
 
       version: 1,
     );
 
-    return _db;
+    return db;
   }
 
   Future<int> create(Task model) async {
-    Database db = await createDAtabase();
+    Database db = await createDatabase();
     return db.insert(
       'ToDo',
       model.toMap(),
@@ -41,29 +39,18 @@ class DatabaseHelper {
     );
   }
 
-  Future<List> allNotes() async {
-    Database db = await createDAtabase();
+  Future<List> getAllTasks() async {
+    Database db = await createDatabase();
     return db.query('ToDo');
   }
 
-  Future<List> checkedNotes() async {
-    Database db = await createDAtabase();
-    return db.query('ToDo', where: 'isChecked=?', whereArgs: ['true']);
-  }
-
   Future<int> delete(int id) async {
-    Database db = await createDAtabase();
+    Database db = await createDatabase();
     return db.delete('ToDo', where: 'ID=?', whereArgs: [id]);
   }
 
-  Future<int> edit(Task model) async {
-    Database db = await createDAtabase();
-    return await db
-        .update('ToDo', model.toMap(), where: 'ID = ?', whereArgs: [model.id]);
-  }
-
-  Future<int> editCheck(Task model) async {
-    Database db = await createDAtabase();
+  Future<int> update(Task model) async {
+    Database db = await createDatabase();
     return await db
         .update('ToDo', model.toMap(), where: 'ID = ?', whereArgs: [model.id]);
   }

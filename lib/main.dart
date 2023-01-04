@@ -3,12 +3,14 @@ import 'package:todo/database_helper.dart';
 import 'task.dart';
 import 'package:flutter/material.dart';
 
-void main() => runApp(MyApp());
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       title: 'ToDo App',
       home: MyHomePage(),
     );
@@ -23,7 +25,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
-  final TextEditingController _textEditingController = TextEditingController();
+  final TextEditingController _textEditingController =
+      TextEditingController();
   final TextEditingController _descriptionEditingController =
       TextEditingController();
   late DatabaseHelper dbConnection;
@@ -34,16 +37,6 @@ class MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     dbConnection = DatabaseHelper();
   }
 
-  // Future<List<Task>> loadData() {
-  //   dbConnection.allNotes().then((value) {
-  //     setState(() {
-  //       _tasks = value;
-  //     });
-  //   });
-  //   debugPrint('loadData');
-  //   return Future.value(_tasks);
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,7 +44,7 @@ class MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
         title: const Text('ToDo App'),
       ),
       body: FutureBuilder(
-        future: dbConnection.allNotes(),
+        future: dbConnection.getAllTasks(),
         builder: (context, AsyncSnapshot<List> snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -61,10 +54,7 @@ class MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
             return ListView.builder(
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
-                // Model task = snapshot.data![index];
-
                 Task task = Task.fromMap(snapshot.data![index]);
-
                 debugPrint('task ${task.title}');
                 return Card(
                   margin: const EdgeInsets.all(8.0),
@@ -99,8 +89,7 @@ class MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                           onPressed: () {
                             setState(() {
                               task.isDone = 'true';
-                              dbConnection.edit(task);
-                              // loadData();
+                              dbConnection.update(task);
                             });
                           },
                         ),
@@ -146,14 +135,13 @@ class MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                           isDone: 'false'));
                       if (_textEditingController.text.isNotEmpty) {
                         setState(() {});
-                        debugPrint('task created');
-                        Navigator.of(context).pop();
+                        Navigator.pop(context);
                         // loadData();
                         _textEditingController.clear();
                         _descriptionEditingController.clear();
                       }
                     },
-                    child: Text('Create'),
+                    child: const Text('Create'),
                   ),
                   GestureDetector(
                     onTap: () {
@@ -162,8 +150,8 @@ class MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                       _descriptionEditingController.clear();
                     },
                     child: Container(
-                      padding: EdgeInsets.all(8.0),
-                      child: Text('Cancel'),
+                      padding: const EdgeInsets.all(8.0),
+                      child: const Text('Cancel'),
                     ),
                   ),
                 ],
@@ -171,7 +159,7 @@ class MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
             },
           );
         },
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
     );
   }

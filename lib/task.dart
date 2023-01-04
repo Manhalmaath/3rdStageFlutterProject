@@ -19,8 +19,6 @@ class Task {
     isDone = data['isDone'];
   }
 
-  // Convert a Dog into a Map. The keys must correspond to the names of the
-  // columns in the database.
   Map<String, dynamic> toMap() {
     return {
       'ID': id,
@@ -30,8 +28,6 @@ class Task {
     };
   }
 
-  // Implement toString to make it easier to see information about
-  // each dog when using the print statement.
   @override
   String toString() {
     return 'toDO{id: $id, title: $title,description:$description,isDone:$isDone}';
@@ -41,7 +37,7 @@ class Task {
 
   get descriptionOfTheNote => description;
 
-  void showCard(BuildContext context, noteTitle, noteDescription) {
+  void showCard(BuildContext context, title, description) {
     showDialog(
       context: context,
       builder: (context) {
@@ -50,11 +46,11 @@ class Task {
             borderRadius: BorderRadius.circular(25.0),
           ),
           title: Text(
-            noteTitle,
+            title,
           ),
-          content: Text(noteDescription.isNotEmpty
-              ? noteDescription
-              : "There is no desciption"),
+          content: Text(description.isNotEmpty
+              ? description
+              : "There is no description for this task"),
           actions: <Widget>[
             TextButton(
               onPressed: () {
